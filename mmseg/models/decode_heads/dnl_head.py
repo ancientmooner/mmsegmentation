@@ -1,5 +1,5 @@
 import torch
-from mmcv.cnn import NonLocal2d
+from mmcv.cnn import NonLocal2d, ConvModule, Scale
 from torch import nn
 
 from ..builder import HEADS
@@ -17,6 +17,15 @@ class DisentangledNonLocal2d(NonLocal2d):
         super().__init__(*arg, **kwargs)
         self.temperature = temperature
         self.conv_mask = nn.Conv2d(self.in_channels, 1, kernel_size=1)
+        self.g = ConvModule(
+            self.in_channels,
+            self.in_channels,
+            kernel_size=1,
+            conv_cfg=None,
+            act_cfg=None,
+            bias=False)
+        self.gamma = Scale(0.)
+        delattr(self, 'conv_out')
 
     def embedded_gaussian(self, theta_x, phi_x):
         """Embedded gaussian with temperature."""
@@ -35,7 +44,8 @@ class DisentangledNonLocal2d(NonLocal2d):
         n = x.size(0)
 
         # g_x: [N, HxW, C]
-        g_x = self.g(x).view(n, self.inter_channels, -1)
+        # g_x = self.g(x).view(n, self.inter_channels, -1)
+        g_x = self.g(x).view(n, self.in_channels, -1)
         g_x = g_x.permute(0, 2, 1)
 
         # theta_x: [N, HxW, C], phi_x: [N, C, HxW]
@@ -65,7 +75,9 @@ class DisentangledNonLocal2d(NonLocal2d):
         # y: [N, HxW, C]
         y = torch.matmul(pairwise_weight, g_x)
         # y: [N, C, H, W]
-        y = y.permute(0, 2, 1).contiguous().reshape(n, self.inter_channels,
+        # y = y.permute(0, 2, 1).contiguous().reshape(n, self.inter_channels,
+        #                                             *x.size()[2:])
+        y = y.permute(0, 2, 1).contiguous().reshape(n, self.in_channels,
                                                     *x.size()[2:])
 
         # unary_mask: [N, 1, HxW]
@@ -75,10 +87,13 @@ class DisentangledNonLocal2d(NonLocal2d):
         # unary_x: [N, 1, C]
         unary_x = torch.matmul(unary_mask, g_x)
         # unary_x: [N, C, 1, 1]
+        # unary_x = unary_x.permute(0, 2, 1).contiguous().reshape(
+        #     n, self.inter_channels, 1, 1)
         unary_x = unary_x.permute(0, 2, 1).contiguous().reshape(
-            n, self.inter_channels, 1, 1)
+            n, self.in_channels, 1, 1)
 
-        output = x + self.conv_out(y + unary_x)
+        # output = x + self.conv_out(y + unary_x)
+        output = x + y + unary_x
 
         return output
 

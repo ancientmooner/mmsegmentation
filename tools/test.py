@@ -112,8 +112,10 @@ def main():
     # build the model and load checkpoint
     model = build_segmentor(cfg.model, train_cfg=None, test_cfg=cfg.test_cfg)
     checkpoint = load_checkpoint(model, args.checkpoint, map_location='cpu')
-    model.CLASSES = checkpoint['meta']['CLASSES']
-    model.PALETTE = checkpoint['meta']['PALETTE']
+    # model.CLASSES = checkpoint['meta']['CLASSES']
+    # model.PALETTE = checkpoint['meta']['PALETTE']
+    model.CLASSES = dataset.CLASSES
+    model.PALETTE = dataset.PALETTE
 
     if not distributed:
         model = MMDataParallel(model, device_ids=[0])
