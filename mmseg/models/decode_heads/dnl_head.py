@@ -1,5 +1,5 @@
 import torch
-from mmcv.cnn import NonLocal2d, ConvModule, Scale
+from mmcv.cnn import ConvModule, NonLocal2d, Scale
 from torch import nn
 
 from ..builder import HEADS
@@ -93,7 +93,8 @@ class DisentangledNonLocal2d(NonLocal2d):
             n, self.in_channels, 1, 1)
 
         # output = x + self.conv_out(y + unary_x)
-        output = x + y + unary_x
+        output = x + self.conv_out(y) + self.conv_out(unary_x)
+        # output = x + self.gamma(y) + unary_x
 
         return output
 

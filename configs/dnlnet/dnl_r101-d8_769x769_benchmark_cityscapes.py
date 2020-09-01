@@ -1,8 +1,10 @@
 # model link: https://openmmlab.oss-accelerate.aliyuncs.com/mmsegmentation/v0.5/dnl_debug/dnl_r101-d8_769x769_benchmark_cityscapes.pth
 _base_ = './dnl_r50-d8_769x769_80k_cityscapes.py'
-model = dict(pretrained=None, backbone=dict(depth=101, stem_channels=128),
-             decode_head=dict(channels=512), auxiliary_head=dict(
-        channels=512))
+model = dict(
+    pretrained=None,
+    backbone=dict(depth=101, stem_channels=128),
+    decode_head=dict(channels=512),
+    auxiliary_head=dict(channels=512))
 # dataset settings
 data_root = 'data/cityscapes/'
 img_norm_cfg = dict(
@@ -26,7 +28,7 @@ test_pipeline = [
         type='MultiScaleFlipAug',
         img_scale=(2048, 1024),
         # img_ratios=[0.5, 0.75, 1.0, 1.25, 1.5, 1.75],
-        flip=False,
+        flip=True,
         transforms=[
             dict(type='Resize', keep_ratio=True),
             dict(type='RandomFlip'),
